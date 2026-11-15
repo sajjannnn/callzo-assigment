@@ -1,0 +1,40 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-callzo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-callzo}
+      POSTGRES_DB: ${POSTGRES_DB:-callzo}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-callzo} -d ${POSTGRES_DB:-callzo}"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+  api:
+    build: .
+    command: ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-callzo}:${POSTGRES_PASSWORD:-callzo}@db:5432/${POSTGRES_DB:-callzo}
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET:-callzo_test_secret_change_me}
+      API_AUTH_TOKEN: ${API_AUTH_TOKEN:-callzo_dev_token}
+      MONTHLY_CAP_SECONDS: ${MONTHLY_CAP_SECONDS:-18000}
+      RETRY_INTERVAL_SECONDS: ${RETRY_INTERVAL_SECONDS:-5}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  simulator:
+    image: meetrj/callzo-webhook-simulator
+    platform: linux/arm64
+    depends_on:
+      - api
+    command: ["--url", "http://api:8000/webhooks/calls", "--scenario", "all"]
+
+volumes:
+  pgdata:
