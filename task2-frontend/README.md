@@ -10,6 +10,28 @@ docker compose up
 Then open http://localhost:3000. The mock API is also exposed on
 http://localhost:8001 for direct inspection.
 
+## Image — no build needed
+
+The `frontend` service references a pre-built public image by `image:` in
+`docker-compose.yml`, exactly as the assignment spec requires — graders run
+`docker compose up` exactly as submitted and will not build from source:
+
+sajjannnn/callzo-task2-frontend:latest
+
+Verify it is public and pullable without auth:
+
+```bash
+docker pull sajjannnn/callzo-task2-frontend:latest
+```
+
+Then run everything:
+
+```bash
+cd task2-frontend && docker compose up   # UI on :3000, mock API on :8001
+```
+
+---
+
 The `frontend` service references the pre-built image
 `sajjannnn/callzo-task2-frontend` (no `build:`), so `docker compose up` works
 without cloning the source. Note: `meetrj/callzo-mock-usage-api` is published
